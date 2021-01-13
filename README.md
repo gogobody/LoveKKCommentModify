@@ -1,6 +1,6 @@
 ## 插件简介
 
-LoveKKComment是一款Typecho邮件通知类插件，支持SMTP、Send Cloud、阿里云邮件推送三种邮件通知方式。
+LoveKKCommentModify是一款Typecho邮件通知类插件，支持SMTP、Send Cloud、阿里云邮件推送三种邮件通知方式。
 
 在评论审核通过、用户评论文章、用户评论被回复时对不同场景进行不同的邮件通知。
 
@@ -11,11 +11,10 @@ gogobody 修改适配 joe 的画图评论显示，美化了邮件模板！
 
 ## 安装方法
 
-> 1. 至[releases](https://github.com/typecho-fans/plugins/releases/tag/plugins-H_to_L)中下载最新版本插件；
-> 2. 将下载的压缩包进行解压并上传至`Typecho`插件目录中，注意目录名称更改为`LoveKKCommentModify`；
-> 3. 后台激活插件；
-> 4. 根据自己的实际情况选择邮件发送接口方式；
-> 5. 根据所选的邮件发送接口，配置相应接口参数。
+> 1. 将下载的压缩包进行解压并上传至`Typecho`插件目录中，注意目录名称更改为`LoveKKCommentModify`；
+> 2. 后台激活插件；
+> 3. 根据自己的实际情况选择邮件发送接口方式；
+> 4. 根据所选的邮件发送接口，配置相应接口参数。
 
 ## 自定义模板说明
 
@@ -53,6 +52,8 @@ author.html内变量与approved.html内变量一致。
 
 ## 更新日志
 
+### 2021.1.13
+> 1. gogobody 适配 joe主题，美化模板显示
 ### 2020.11.25
 
 > 1. 修复评论审核通过没有发邮件的问题，感谢社区 @rakiy 提供的解决方案，代码修改 by 雪山凌狐（原作者已表示不再维护该插件）
