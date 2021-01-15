@@ -101,7 +101,7 @@ class LoveKKCommentModify_Plugin implements Typecho_Plugin_Interface
                     <?php require_once('Backups.php'); ?>
                 </div>
             </div>
-            <span id="j-version" style="display: none;">1.1.1</span>
+            <span id="j-version" style="display: none;">1.1.2</span>
             <div class="j-setting-notice">请求数据中...</div>
             <script src="<?php echo Helper::options()->rootUrl ?>/usr/plugins/LoveKKCommentModify/assets/js/joe.setting.min.js"></script>
         <?
@@ -723,7 +723,7 @@ class LoveKKCommentModify_Plugin implements Typecho_Plugin_Interface
         // 获取插件配置
         $plugin = Helper::options()->plugin('LoveKKCommentModify');
         // 如果开启了Debug
-        if ( in_array('enable', $plugin->public_debug) ) {
+        if ( $plugin->public_debug and in_array('enable', $plugin->public_debug) ) {
             // 记录时间
             $log = '[Send Cloud] ' . date('Y-m-d H:i:s') . ': ' . PHP_EOL;
             // 如果失败
@@ -814,7 +814,7 @@ class LoveKKCommentModify_Plugin implements Typecho_Plugin_Interface
         // 获取插件配置
         $plugin = Helper::options()->plugin('LoveKKCommentModify');
         // 如果开启了Debug
-        if ( in_array('enable', $plugin->public_debug) ) {
+        if ( $plugin->public_debug and in_array('enable', $plugin->public_debug) ) {
             // 记录时间
             $log = '[Aliyun] ' . date('Y-m-d H:i:s') . ': ' . PHP_EOL;
             // 如果失败
@@ -914,8 +914,9 @@ class LoveKKCommentModify_Plugin implements Typecho_Plugin_Interface
         $plugin = Helper::options()->plugin('LoveKKCommentModify');
         // 发送邮件
         $result = $mail->send();
-        // 如果开启了Debug
-        if ( in_array('enable', $plugin->public_debug) ) {
+
+
+        if ( $plugin->public_debug and in_array('enable', $plugin->public_debug) ) {
             // 记录时间
             $log = '[SMTP] ' . date('Y-m-d H:i:s') . ': ' . PHP_EOL;
             $log .= 'data: ' . serialize($param) . PHP_EOL . PHP_EOL;
@@ -1119,7 +1120,7 @@ class LoveKKCommentModify_Plugin implements Typecho_Plugin_Interface
                             <label>审核失败回复：</label>
                         </div>
                         <br>
-                        <script>function mailsend(e) {
+                        <script>function mailsend(e,this_) {
                         e.preventDefault();
                         let text = $("#checkfailmsg").val()
                         if (text === ""|| text.length === 0){
@@ -1132,15 +1133,15 @@ class LoveKKCommentModify_Plugin implements Typecho_Plugin_Interface
                           permalink:'<?php _e($post->permalink); ?>',
                           text: text
                         }
-                        let that = this;
-                        $(that).val('发送中...')
+                        let that = this_;
+                        $(that).text('发送中...')
                         $(that).attr("disabled", true);
                         let count = 10;
                         let countdown = setInterval(CountDown, 1000);
                         function CountDown() {
-                            $(that).val("发送中 " + count + " s");
+                            $(that).text("发送中 " + count + " s");
                             if (count === 0) {
-                                $(that).val("发送邮件").removeAttr("disabled");
+                                $(that).text("发送邮件").removeAttr("disabled");
                                 clearInterval(countdown);
                             }
                             count--;
@@ -1152,17 +1153,17 @@ class LoveKKCommentModify_Plugin implements Typecho_Plugin_Interface
                             success:function(res) {
                                 if (res.status === 'succ'){
                                     alert('邮件发送成功')
-                                    $(that).val('发送邮件')
+                                    $(that).text('发送邮件')
                                 }else{
                                     alert(res.msg)
-                                    $(that).val('发送邮件')
+                                    $(that).text('发送邮件')
                                 }
-                                $(that).val("发送邮件").removeAttr("disabled");
+                                $(that).text("发送邮件").removeAttr("disabled");
                                 clearInterval(countdown);
                             }
                         })
                         }</script>
-                        <button class="btn btn-primary btn-small btn-jelly" onclick="mailsend(event)"><?php _e($btn_text); ?></button>
+                        <button class="btn btn-primary btn-small btn-jelly" onclick="mailsend(event,this)"><?php _e($btn_text); ?></button>
                     </p>
                     <p class="description">审核失败需要手动填写信息并点击发送邮件，审核成功则只需要修改高级选项公开度为公开，保存，会自动发邮件。</p>
                 </section>
@@ -1216,7 +1217,8 @@ class LoveKKCommentModify_Plugin implements Typecho_Plugin_Interface
         }
         // 自己审核自己就不用管
         Typecho_Widget::widget('Widget_User')->to($l_user);
-        if($obj->authorId == $l_user->uid){
+
+        if($l_user->pass('editor',true) and $obj->authorId == $l_user->uid){
             return;
         }
 
