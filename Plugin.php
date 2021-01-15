@@ -220,7 +220,7 @@ class LoveKKCommentModify_Plugin implements Typecho_Plugin_Interface
         $Allow_postpage_check = new Typecho_Widget_Helper_Form_Element_Radio('allow_postpage_check', array(
                 '0' => '关闭',
                 '1' => '开启'
-        ), '1', _t('文章页发送文章失败邮件'), _t('是否启用文章页发送文章失败邮件'));
+        ), '1', _t('文章页文章审核不通过邮件提醒'), _t('是否启用文章页文章审核不通过邮件提醒'));
         $Allow_postpage_check->setAttribute('class', 'j-setting-content j-setting-other');
         $form->addInput($Allow_postpage_check);
 
