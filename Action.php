@@ -1,16 +1,8 @@
 <?php
-/**
- * Typecho 评论通知、找回密码插件
- *
- * @package LoveKKCommentModify
- * @author  康粑粑
- * @version 1.0.5
- * @link    https://www.usebsd.com
- */
 
 if ( !defined('__TYPECHO_ROOT_DIR__') ) exit;
 
-class LoveKKComment_Action extends Widget_Abstract_Users implements Widget_Interface_Do
+class LoveKKCommentModify_Action extends Widget_Abstract_Users implements Widget_Interface_Do
 {
     /**
      * 插件配置
@@ -487,7 +479,193 @@ class LoveKKComment_Action extends Widget_Abstract_Users implements Widget_Inter
         // 跳转登录页面
         $this->response->redirect($this->options->loginUrl);
     }
-    
+
+    // 发送审核失败邮件
+    private function doSendCheckMail(){
+        Typecho_Widget::widget('Widget_User')->to($l_user);
+        if(!$l_user->hasLogin()){
+            $this->response->throwJson(array(
+                'status'=>'err',
+                'msg' => '未登录',
+                'data' => array()
+            ));
+        }
+        if(!$l_user->pass('editor', true)){
+            $this->response->throwJson(array(
+                'status'=>'err',
+                'msg' => '没有这个权限',
+                'data' => array()
+            ));
+        }
+        // 获取必要的 request 信息
+
+        $cid = $this->request->get('cid','');
+        $permalink_ = $this->request->get('permalink','');
+        $text = $this->request->get('text','');
+        if ($cid == '' or $permalink_ == '' or $text == ''){
+            $this->response->throwJson(array(
+                'status'=>'err',
+                'msg' => '参数错误',
+                'data' => array()
+            ));
+        }
+        // 获取 post 信息
+        $post = $this->db->fetchObject($this->db->select()->from('table.contents')->where('cid = ?',$cid));
+        if(!$post){
+            $this->response->throwJson(array(
+                'status'=>'err',
+                'msg' => '文章不存在',
+                'data' => array()
+            ));
+        }
+        $post_author = $this->db->fetchObject($this->db->select()->from('table.users')->where('uid = ?',$post->authorId));
+        if(!$post_author){
+            $this->response->throwJson(array(
+                'status'=>'err',
+                'msg' => '用户不存在',
+                'data' => array()
+            ));
+        }
+
+        // 请求参数
+        $data = array(
+            'fromName' => ( !isset($this->_plugin->public_name) || is_null($this->_plugin->public_name) || empty($this->_plugin->public_name) ) ? trim($this->options->title) : $this->_plugin->public_name, // 发件人名称
+            'from' => $this->_plugin->public_mail, // 发件地址
+            'to' => $post_author->mail, // 收件地址
+            'replyTo' => $this->_plugin->public_replyto // 回信地址
+        );
+
+        // 标题
+        $data['subject'] = _t('您在 [' . trim($this->options->title) . '] 发表的文章审核失败!');
+        // 读取模板
+        $html = file_get_contents(dirname(__FILE__) . '/theme/postcheckfail.html');
+        // 替换内容
+        $data['html'] = str_replace(
+            array(
+                '{blogName}',
+                '{blogUrl}',
+                '{permalink}',
+                '{title}',
+                '{admin}',
+                '{text}',
+                '{check_p_mail}',
+                '{time}',
+                '{status}'
+            ),
+            array(
+                trim($this->options->title),
+                trim($this->options->siteUrl),
+                trim($permalink_),
+                trim($post->title),
+                trim($l_user->name),
+                trim($text),
+                trim($l_user->mail),
+                trim(date('Y-m-d H:i:s', time())),
+                '审核失败'
+            ),
+            $html
+        );
+        // 根据接口选择
+        switch ( $this->_plugin->public_interface ) {
+            case 'sendcloud': // Send Cloud
+                // API User
+                $data['apiUser'] = $this->_plugin->sendcloud_api_user;
+                // API Key
+                $data['apiKey'] = $this->_plugin->sendcloud_api_key;
+                // 是否成功
+                if ( !LoveKKCommentModify_Plugin::sendCloud($data) ) {
+                    $this->response->throwJson(array(
+                        'status'=>'fail',
+                        'msg' => '邮件发送失败, 请联系管理员解决!！',
+                        'data' => array()
+                    ));
+                }
+                $this->response->throwJson(array(
+                    'status'=>'succ',
+                    'msg' => '发送成功',
+                    'data' => array()
+                ));
+            case 'aliyun': // 阿里云
+                // 判断当前请求区域
+                switch ( $this->_plugin->ali_region ) {
+                    case 'hangzhou': // 杭州
+                        // API地址
+                        $data['api'] = 'https://dm.aliyuncs.com/';
+                        // API版本号
+                        $data['version'] = '2015-11-23';
+                        // 机房信息
+                        $data['region'] = 'cn-hangzhou';
+                        break;
+                    case 'singapore': // 新加坡
+                        // API地址
+                        $data['api'] = 'https://dm.ap-southeast-1.aliyuncs.com/';
+                        // API版本号
+                        $data['version'] = '2017-06-22';
+                        // 机房信息
+                        $data['region'] = 'ap-southeast-1';
+                        break;
+                    case 'sydney': // 悉尼
+                        // API地址
+                        $data['api'] = 'https://dm.ap-southeast-2.aliyuncs.com/';
+                        // API版本号
+                        $data['version'] = '2017-06-22';
+                        // 机房信息
+                        $data['region'] = 'ap-southeast-2';
+                        break;
+                }
+                // AccessKeyId
+                $data['accessid'] = $this->_plugin->ali_accesskey_id;
+                // AccessKeySecret
+                $data['accesssecret'] = $this->_plugin->ali_accesskey_secret;
+                // 是否成功
+                if ( !LoveKKCommentModify_Plugin::aliyun($data) ) {
+                    $this->response->throwJson(array(
+                        'status'=>'fail',
+                        'msg' => '邮件发送失败, 请联系管理员解决!！',
+                        'data' => array()
+                    ));
+                }
+                $this->response->throwJson(array(
+                    'status'=>'succ',
+                    'msg' => '发送成功',
+                    'data' => array()
+                ));
+            default: // SMTP
+                // SMTP地址
+                $data['smtp_host'] = $this->_plugin->smtp_host;
+                // SMTP端口
+                $data['smtp_port'] = $this->_plugin->smtp_port;
+                // SMTP用户
+                $data['smtp_user'] = $this->_plugin->smtp_user;
+                // SMTP密码
+                $data['smtp_pass'] = $this->_plugin->smtp_pass;
+                // 验证模式
+                $data['smtp_auth'] = $this->_plugin->smtp_auth;
+                // 加密模式
+                $data['smtp_secure'] = $this->_plugin->smtp_secure;
+                // 是否成功
+                if ( !LoveKKCommentModify_Plugin::smtp($data) ) {
+                    $this->response->throwJson(array(
+                        'status'=>'fail',
+                        'msg' => '邮件发送失败, 请联系管理员解决!！',
+                        'data' => array()
+                    ));
+                }
+                // 更新数据库相关数据
+
+                $this->db->query($this->db->update('table.contents')->rows(array(
+                        'status' => 'waiting',
+                        'mailsended' => 1,
+                        'mailstime' => time()
+                ))->where('cid = ?',$cid));
+
+                $this->response->throwJson(array(
+                    'status'=>'succ',
+                    'msg' => '发送成功',
+                    'data' => array()
+                ));
+        }
+    }
     /**
      * 操作方法
      *
@@ -497,13 +675,16 @@ class LoveKKComment_Action extends Widget_Abstract_Users implements Widget_Inter
     public function action()
     {
         // 如果用户是登录状态则直接跳转至个人信息界面
-        if ( $this->user->hasLogin() ) $this->response->redirect($this->options->profileUrl);
+
+        if ( $this->request->isGet() and $this->user->hasLogin() ) $this->response->redirect($this->options->profileUrl);
         // 动作必须是POST提交
         if ( $this->request->isPost() ) {
             // 忘记密码请求
             $this->on($this->request->is('do=forget'))->doForget();
             // 重置密码请求
             $this->on($this->request->is('do=reset'))->doReset();
+            // 发送审核邮件
+            $this->on($this->request->is('do=sendcheckmail'))->doSendCheckMail();
         }
         // 忘记密码界面
         if ( $this->request->is('forget') ) $this->html('forget', $this->forgetForm());
