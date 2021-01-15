@@ -238,7 +238,7 @@ class LoveKKCommentModify_Plugin implements Typecho_Plugin_Interface
         $Allow_notify_admin->setAttribute('class', 'j-setting-content j-setting-other');
         $form->addInput($Allow_notify_admin);
 
-        $notify_email = new Typecho_Widget_Helper_Form_Element_Text('notify_email ', NULL, '1', _t('提醒邮箱'), _t('当有其他作者发表文章的时候，会向该邮箱发送提醒！'));
+        $notify_email = new Typecho_Widget_Helper_Form_Element_Text('notify_email ', NULL, null, _t('提醒邮箱'), _t('当有其他作者发表文章的时候，会向该邮箱发送提醒！'));
         $notify_email->setAttribute('class', 'j-setting-content j-setting-other');
         $form->addInput($notify_email);
     }
