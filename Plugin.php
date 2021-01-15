@@ -4,7 +4,7 @@
  * gogobody 美化 适配 joe主题
  * @package LoveKKCommentModify
  * @author  gogobody
- * @version 1.0.7
+ * @version 1.1.1
  * @link    https://ijkxs.com
  */
 
