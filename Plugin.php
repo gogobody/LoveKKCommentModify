@@ -101,7 +101,7 @@ class LoveKKCommentModify_Plugin implements Typecho_Plugin_Interface
                     <?php require_once('Backups.php'); ?>
                 </div>
             </div>
-            <span id="j-version" style="display: none;">1.1.0</span>
+            <span id="j-version" style="display: none;">1.1.1</span>
             <div class="j-setting-notice">请求数据中...</div>
             <script src="<?php echo Helper::options()->rootUrl ?>/usr/plugins/LoveKKCommentModify/assets/js/joe.setting.min.js"></script>
         <?
@@ -231,6 +231,16 @@ class LoveKKCommentModify_Plugin implements Typecho_Plugin_Interface
         $Allow_post_check_succ_sendmail->setAttribute('class', 'j-setting-content j-setting-other');
         $form->addInput($Allow_post_check_succ_sendmail);
 
+        $Allow_notify_admin = new Typecho_Widget_Helper_Form_Element_Radio('allow_notify_admin', array(
+                '0' => '关闭',
+                '1' => '开启'
+        ), '1', _t('邮件通知管理员'), _t('当其他人在作者网站发表文章的时候自动通知管理员'));
+        $Allow_notify_admin->setAttribute('class', 'j-setting-content j-setting-other');
+        $form->addInput($Allow_notify_admin);
+
+        $notify_email = new Typecho_Widget_Helper_Form_Element_Text('notify_email ', NULL, '1', _t('提醒邮箱'), _t('当有其他作者发表文章的时候，会向该邮箱发送提醒！'));
+        $notify_email->setAttribute('class', 'j-setting-content j-setting-global');
+        $form->addInput($notify_email);
     }
     
     static public function personalConfig(Typecho_Widget_Helper_Form $form)
@@ -1169,8 +1179,11 @@ class LoveKKCommentModify_Plugin implements Typecho_Plugin_Interface
     public static function postwrite($contents, $obj){
         // 保存之前的状态
         $db = Typecho_Db::get();
+        $contents['newPost'] = '0';
         if ($obj->have()) {
             $contents['beforeStatus'] = $db->fetchObject($db->select('status')->from('table.contents')->where('cid = ?',$obj->cid))->status;
+        }else{ // 说明是一个新的内容，如果是待审核，那么应该通知管理员
+            $contents['newPost'] = '1';
         }
         return $contents;
     }
@@ -1321,7 +1334,129 @@ class LoveKKCommentModify_Plugin implements Typecho_Plugin_Interface
                     }
             }
         }
+        // 检测是否是新发布的 post
+        elseif ($contents['newPost'] == '1'){
+            // 选项关闭
+            if ($_plugin->allow_notify_admin == '0'){
+                return;
+            }
+             // 获取文章作者信息
+            $post_author = $db->fetchObject($db->select()->from('table.users')->where('uid = ?',$obj->authorId));
+            if(!$post_author){
+                throw new Typecho_Plugin_Exception(_t('用户不存在'));
+            }
+            // 获取管理员信息
+            // 设置的提醒邮箱为空
+            if($_plugin->notify_email == '' or empty($_plugin->notify_email)){
+                return;
+            }
 
+            // 请求参数
+            $data = array(
+                'fromName' => ( !isset($_plugin->public_name) || is_null($_plugin->public_name) || empty($_plugin->public_name) ) ? trim($user_options->title) : $_plugin->public_name, // 发件人名称
+                'from' => $_plugin->public_mail, // 发件地址
+                'to' => $_plugin->notify_email, // 收件地址
+                'replyTo' => $_plugin->public_replyto // 回信地址
+            );
+
+            // 标题
+            $data['subject'] = _t('文章审核，有人在您的 [' . trim($user_options->title) . '] 发表的文章，请您审核!');
+            // 读取模板
+            $html = file_get_contents(dirname(__FILE__) . '/theme/notifyAuthorCheck.html');
+            // 替换内容
+            $data['html'] = str_replace(
+                array(
+                    '{blogName}',
+                    '{blogUrl}',
+                    '{permalink}',
+                    '{title}',
+                    '{check_p_mail}',
+                    '{time}',
+                    '{status}',
+                    '{authorName}',
+                    '{authorMail}'
+                ),
+                array(
+                    trim($user_options->title),
+                    trim($user_options->siteUrl),
+                    trim($obj->permalink),
+                    trim($obj->title),
+                    trim($l_user->mail),
+                    trim(date('Y-m-d H:i:s', time())),
+                    '等待审核',
+                    $post_author->name,
+                    $post_author->mail
+                ),
+                $html
+            );
+            // 根据接口选择
+            switch ( $_plugin->public_interface ) {
+                case 'sendcloud': // Send Cloud
+                    // API User
+                    $data['apiUser'] = $_plugin->sendcloud_api_user;
+                    // API Key
+                    $data['apiKey'] = $_plugin->sendcloud_api_key;
+                    // 是否成功
+                    if ( !LoveKKCommentModify_Plugin::sendCloud($data) ) {
+                        throw new Typecho_Plugin_Exception(_t('邮件发送失败, 请联系管理员解决!！'));
+                    }
+                case 'aliyun': // 阿里云
+                    // 判断当前请求区域
+                    switch ( $_plugin->ali_region ) {
+                        case 'hangzhou': // 杭州
+                            // API地址
+                            $data['api'] = 'https://dm.aliyuncs.com/';
+                            // API版本号
+                            $data['version'] = '2015-11-23';
+                            // 机房信息
+                            $data['region'] = 'cn-hangzhou';
+                            break;
+                        case 'singapore': // 新加坡
+                            // API地址
+                            $data['api'] = 'https://dm.ap-southeast-1.aliyuncs.com/';
+                            // API版本号
+                            $data['version'] = '2017-06-22';
+                            // 机房信息
+                            $data['region'] = 'ap-southeast-1';
+                            break;
+                        case 'sydney': // 悉尼
+                            // API地址
+                            $data['api'] = 'https://dm.ap-southeast-2.aliyuncs.com/';
+                            // API版本号
+                            $data['version'] = '2017-06-22';
+                            // 机房信息
+                            $data['region'] = 'ap-southeast-2';
+                            break;
+                    }
+                    // AccessKeyId
+                    $data['accessid'] = $_plugin->ali_accesskey_id;
+                    // AccessKeySecret
+                    $data['accesssecret'] = $_plugin->ali_accesskey_secret;
+                    // 是否成功
+                    if ( !LoveKKCommentModify_Plugin::aliyun($data) ) {
+                         throw new Typecho_Plugin_Exception(_t('邮件发送失败, 请联系管理员解决!！'));
+                    }
+
+                default: // SMTP
+                    // SMTP地址
+                    $data['smtp_host'] = $_plugin->smtp_host;
+                    // SMTP端口
+                    $data['smtp_port'] = $_plugin->smtp_port;
+                    // SMTP用户
+                    $data['smtp_user'] = $_plugin->smtp_user;
+                    // SMTP密码
+                    $data['smtp_pass'] = $_plugin->smtp_pass;
+                    // 验证模式
+                    $data['smtp_auth'] = $_plugin->smtp_auth;
+                    // 加密模式
+                    $data['smtp_secure'] = $_plugin->smtp_secure;
+                    // 是否成功
+                    if ( !LoveKKCommentModify_Plugin::smtp($data) ) {
+                         throw new Typecho_Plugin_Exception(_t('邮件发送失败, 请联系管理员解决!！'));
+
+                    }
+            }
+        }
 
     }
 }
