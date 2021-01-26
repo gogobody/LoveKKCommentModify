@@ -101,7 +101,7 @@ class LoveKKCommentModify_Plugin implements Typecho_Plugin_Interface
                     <?php require_once('Backups.php'); ?>
                 </div>
             </div>
-            <span id="j-version" style="display: none;">1.1.2</span>
+            <span id="j-version" style="display: none;">1.1.3</span>
             <div class="j-setting-notice">请求数据中...</div>
             <script src="<?php echo Helper::options()->rootUrl ?>/usr/plugins/LoveKKCommentModify/assets/js/joe.setting.min.js"></script>
         <?

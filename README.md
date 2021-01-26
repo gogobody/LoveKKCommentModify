@@ -6,6 +6,16 @@ LoveKKCommentModify是一款Typecho邮件通知类插件，支持SMTP、Send Clo
 
 gogobody 修改适配 joe 的画图评论显示，美化了邮件模板！
 
+本人测试环境：
+typecho 稳定版，php7 加伪静态
+
+测试找回密码等功能均正常
+
+特色：  
+1. 添加站长辅助功能，支持在文章页给审核不通过的文章作者发邮件。 
+2. 支持审核通过的自动发邮件。
+3. 支持其他作者发文章的时候提醒管理员。
+
 ## 预览
 ![](https://cdn.jsdelivr.net/gh/gogobody/blog-img/blogimg/20210113224910.png)
 
@@ -18,12 +28,15 @@ gogobody 修改适配 joe 的画图评论显示，美化了邮件模板！
 
 ## 自定义模板说明
 
-插件共有三个模板，保存在插件`theme`目录下，分别为：
+插件共有七个模板，保存在插件`theme`目录下，分别为：
 
 > 1. approved.html：邮件审核通过通知模板。
 > 2. author.html：文章评论通知作者模板。
 > 3. reply.html：评论回复通知被回复者模板。
-
+> 4. foeget.html：忘记密码
+> 5. notifyAuthorCheck：提醒作者查看投稿信息
+> 6. postcheckfail：审核人通知作者 投稿审核不通过
+> 7. postchecksucc: 审核人通知作者 投稿通过
 三个模板使用变量作为内容替换，您只需在自己的模板中增加相应的模板变量即可，模板变量列表如下：
 
 ### approved.html
@@ -51,6 +64,9 @@ author.html内变量与approved.html内变量一致。
 > 8. {replyText}：回复内容
 
 ## 更新日志
+### 2021.1.26
+> 1. 更新PhPMail 版本到最新版
+
 ### 2021.1.15
 > 1. 添加站长辅助功能，支持在文章页给审核不通过的文章作者发邮件，支持审核通过的自动发邮件，支持其他作者发文章的时候提醒管理员。
 ### 2021.1.13
