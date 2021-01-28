@@ -30,8 +30,8 @@ class LoveKKCommentModify_Plugin implements Typecho_Plugin_Interface
         }
         
         // 评论通知添加绑定
-        Typecho_Plugin::factory('Widget_Feedback')->finishComment = array(__CLASS__, 'doComment');
-        Typecho_Plugin::factory('Widget_Comments_Edit')->finishComment = array(__CLASS__, 'doComment');
+        Typecho_Plugin::factory('Widget_Feedback')->finishComment_90 = array(__CLASS__, 'doComment');
+        Typecho_Plugin::factory('Widget_Comments_Edit')->finishComment_90 = array(__CLASS__, 'doComment');
         Typecho_Plugin::factory('Widget_Comments_Edit')->mark = array(__CLASS__, 'doApproved');
         // 检测当前版本
         if ( version_compare(str_replace('/', '.', Typecho_Common::VERSION), '1.1.17.10.30') ) {
@@ -288,7 +288,7 @@ class LoveKKCommentModify_Plugin implements Typecho_Plugin_Interface
         // 获取插件配置
         $plugin = $options->plugin('LoveKKCommentModify');
         // 是否启用配置验证
-        if ( in_array('enable', $plugin->public_verify) ) {
+        if ( $plugin->public_verify and in_array('enable', $plugin->public_verify) ) {
             // 根据不同的接口选择来进行验证
             switch ( $settings['public_interface'] ) {
                 case 'sendcloud': // Send Cloud验证
@@ -871,50 +871,56 @@ class LoveKKCommentModify_Plugin implements Typecho_Plugin_Interface
         if ( !class_exists('PHPMaile\PHPMailer\Exception') ) {
             require dirname(__FILE__) . '/lib/Exception.php';
         }
-        
-        // 初始化PHPMailer
-        $mail = new PHPMailer\PHPMailer\PHPMailer(FALSE);
-        // 设置编码
-        $mail->CharSet = 'UTF-8';
-        // 启用SMTP
-        $mail->isSMTP();
-        // SMTP地址
-        $mail->Host = $param['smtp_host'];
-        // SMTP端口
-        $mail->Port = $param['smtp_port'] ?: 25;
-        // SMTP用户名
-        $mail->Username = $param['smtp_user'];
-        // SMTP密码
-        $mail->Password = $param['smtp_pass'];
-        // 是否需要验证
-        if ( in_array('enable', $param['smtp_auth']) ) {
-            // 开启验证
-            $mail->SMTPAuth = TRUE;
-        }
-        // 加密模式
-        if ( 'none' != $param['smtp_secure'] ) {
-            // 设置加密模式
-            $mail->SMTPSecure = $param['smtp_secure'];
-        }
-        // 发件人信息
-        $mail->setFrom($param['from'], $param['fromName']);
-        // 回信信息
-        $mail->addReplyTo($param['replyTo'], $param['fromName']);
-        // 收件地址
-        $mail->addAddress($param['to']);
-        // HTML格式
-        $mail->isHTML(TRUE);
-        // Debug级别
-        $mail->SMTPDebug = 0;
-        // 邮件标题
-        $mail->Subject = $param['subject'];
-        // 邮件内容
-        $mail->msgHTML($param['html']);
-        // 获取插件配置
-        $plugin = Helper::options()->plugin('LoveKKCommentModify');
-        // 发送邮件
-        $result = $mail->send();
+        try{
+             // 初始化PHPMailer
+            $mail = new PHPMailer\PHPMailer\PHPMailer(TRUE);
+            // Debug级别
+            $mail->SMTPDebug = 0;
+//
+//            $mail->SMTPDebug = 2;
+            // 设置编码
+            $mail->CharSet = 'UTF-8';
+            // 启用SMTP
 
+            $mail->isSMTP();
+            // SMTP地址
+            $mail->Host = $param['smtp_host'];
+            // SMTP端口
+            $mail->Port = $param['smtp_port'] ?: 25;
+            // SMTP用户名
+            $mail->Username = $param['smtp_user'];
+            // SMTP密码
+            $mail->Password = $param['smtp_pass'];
+            // 是否需要验证
+            if ( $param['smtp_auth'] and in_array('enable', $param['smtp_auth']) ) {
+                // 开启验证
+                $mail->SMTPAuth = TRUE;
+            }
+            // 加密模式
+            if ( 'none' != $param['smtp_secure'] ) {
+                // 设置加密模式
+                $mail->SMTPSecure = $param['smtp_secure'];
+            }
+            // 发件人信息
+            $mail->setFrom($param['from'], $param['fromName']);
+            // 回信信息
+            $mail->addReplyTo($param['replyTo'], $param['fromName']);
+            // 收件地址
+            $mail->addAddress($param['to']);
+            // HTML格式
+            $mail->isHTML(TRUE);
+            // 邮件标题
+            $mail->Subject = $param['subject'];
+            // 邮件内容
+            $mail->msgHTML($param['html']);
+            // 获取插件配置
+            $plugin = Helper::options()->plugin('LoveKKCommentModify');
+            // 发送邮件
+            $result = $mail->send();
+
+        } catch (Exception $e) {
+            file_put_contents(__DIR__ . '/debug.txt', $e. PHP_EOL, FILE_APPEND);
+        }
 
         if ( $plugin->public_debug and in_array('enable', $plugin->public_debug) ) {
             // 记录时间
@@ -941,7 +947,7 @@ class LoveKKCommentModify_Plugin implements Typecho_Plugin_Interface
         // 获取插件配置
         $plugin = $options->plugin('LoveKKCommentModify');
         // 如果开启了密码找回
-        if ( in_array('enable', $plugin->public_forget) ) {
+        if ($plugin->public_forget and in_array('enable', $plugin->public_forget) ) {
             // 初始化request对象
             $request = Typecho_Request::getInstance();
             // 获取当前请求
