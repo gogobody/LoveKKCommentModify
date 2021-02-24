@@ -22,10 +22,10 @@ document.addEventListener("DOMContentLoaded", function () {
             let t = JSON.parse(a.responseText);
             let newest = t.tag_name;
             if (newest > n.innerHTML) {
-                let s = '<h2 class="update">检测到版本更新！</h2><p>当前版本号：' + n.innerHTML + "</p><p>最新版本号：" + newest + "</p><p><a href='https://ijkxs.com'>即刻学术</a></p>";
+                let s = '<h2 class="update">检测到版本更新！</h2><p>当前版本号：' + n.innerHTML + "</p><p>最新版本号：" + newest + "</p><p><a href='https://www.ijkxs.com'>即刻学术</a></p>";
                 e.innerHTML = s
             } else {
-                let s = '<h2 class="no-update">当前已是最新版本！</h2><p>当前版本号：' + n.innerHTML + "</p><p>最新版本号：" + newest + "</p><p><a href='https://ijkxs.com'>即刻学术</a></p>";
+                let s = '<h2 class="no-update">当前已是最新版本！</h2><p>当前版本号：' + n.innerHTML + "</p><p>最新版本号：" + newest + "</p><p><a href='https://www.ijkxs.com'>即刻学术</a></p>";
                 e.innerHTML = s
             }
         } else e.innerHTML = "请求失败！"

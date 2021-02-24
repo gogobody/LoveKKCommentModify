@@ -5,7 +5,7 @@
  * @package LoveKKCommentModify
  * @author  gogobody
  * @version 1.1.1
- * @link    https://ijkxs.com
+ * @link    https://www.ijkxs.com
  */
 
 if ( !defined('__TYPECHO_ROOT_DIR__') ) exit;
@@ -590,6 +590,7 @@ class LoveKKCommentModify_Plugin implements Typecho_Plugin_Interface
                         trim($comment->author),
                         trim($comment_text),
                         trim($comment->permalink),
+                        $time
                     ), $html
                 );
             } else {
