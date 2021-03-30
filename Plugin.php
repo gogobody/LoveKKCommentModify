@@ -427,6 +427,7 @@ class LoveKKCommentModify_Plugin implements Typecho_Plugin_Interface
      */
     static public function doApproved($comment, $edit, $status)
     {
+
         // 仅审核通过才发送邮件
         if ( 'approved' == $status ) {
             // 检测当前版本是否大于1.1/17.10.30
@@ -484,11 +485,14 @@ class LoveKKCommentModify_Plugin implements Typecho_Plugin_Interface
             // 获取作者信息
             $author = self::getWidget('Users', 'uid', $comment->ownerId);
             // 收件地址
-            $address = $author->mail;
+            if ($author and $author->mail)
+                $address = $author->mail;
+            else
+                $address = $comment->mail;
             // 上级评论
             $parentComment = NULL;
         }
-        
+
         // 评论回复
         if ( 0 < $comment->parent ) {
             // 获取上级对象
