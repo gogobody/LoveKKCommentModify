@@ -4,7 +4,7 @@
  * gogobody 美化 适配 joe主题
  * @package LoveKKCommentModify
  * @author  gogobody
- * @version 1.1.1
+ * @version 1.1.5
  * @link    https://www.ijkxs.com
  */
 
@@ -493,15 +493,15 @@ class LoveKKCommentModify_Plugin implements Typecho_Plugin_Interface
         // 上级评论对象
         $parentComment = NULL;
         // 不是帖子发表者
-        if ( $comment->authorId != $comment->ownerId ) {
+        if ( !$isApproved and $comment->authorId != $comment->ownerId ) {
             // 获取作者信息
             $author = self::getWidget('Users', 'uid', $comment->ownerId);
-            // 收件地址
-//            if ($author and $author->mail)
-//                $address = $author->mail;
-//            else
-//                $address = $comment->mail;
-            // 上级评论
+//             收件地址
+            if ($author and $author->mail)
+                $address = $author->mail;
+            else
+                $address = $comment->mail;
+//             上级评论
             $parentComment = NULL;
         }
 
