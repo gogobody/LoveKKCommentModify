@@ -1152,8 +1152,8 @@ class LoveKKCommentModify_Plugin implements Typecho_Plugin_Interface
                         }
                         let data = {
                           do:'sendcheckmail',
-                          cid:'<?php _e($post->cid); ?>',
-                          permalink:'<?php _e($post->permalink); ?>',
+                          cid:'<?php $post->cid?_e($post->cid):""; ?>',
+                          permalink:'<?php $post->permalink?_e($post->permalink):""; ?>',
                           text: text
                         }
                         let that = this_;
