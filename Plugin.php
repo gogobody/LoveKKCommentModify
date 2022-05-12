@@ -4,7 +4,7 @@
  * gogobody 美化 适配 joe主题
  * @package LoveKKCommentModify
  * @author  gogobody
- * @version 1.1.5
+ * @version 1.1.6
  * @link    https://www.ijkxs.com
  */
 
@@ -101,7 +101,7 @@ class LoveKKCommentModify_Plugin implements Typecho_Plugin_Interface
                     <?php require_once('Backups.php'); ?>
                 </div>
             </div>
-            <span id="j-version" style="display: none;">1.1.3</span>
+            <span id="j-version" style="display: none;">1.1.6</span>
             <div class="j-setting-notice">请求数据中...</div>
             <script src="<?php echo Helper::options()->rootUrl ?>/usr/plugins/LoveKKCommentModify/assets/js/joe.setting.min.js"></script>
         <?
@@ -408,13 +408,18 @@ class LoveKKCommentModify_Plugin implements Typecho_Plugin_Interface
             $coid = $comment->coid;
         }
         // 检测当前版本是否大于1.1/17.10.30
-        if ( version_compare(str_replace('/', '.', Typecho_Common::VERSION), '1.1.17.10.30') ) {
-            // 调用异步回调模式
-
-            Helper::requestService('sendMail', $coid);
-        } else {
+        if (Typecho_Common::VERSION == '1.2.0'){
             self::sendMail($coid);
+
+        } else {
+            if ( version_compare(str_replace('/', '.', Typecho_Common::VERSION), '1.1.17.10.30') ) {
+                // 调用异步回调模式
+                Helper::requestService('sendMail', $coid);
+            } else {
+                self::sendMail($coid);
+            }
         }
+
     }
     
     /**
@@ -437,13 +442,18 @@ class LoveKKCommentModify_Plugin implements Typecho_Plugin_Interface
         // 仅审核通过才发送邮件
         if ( 'approved' == $status ) {
             // 检测当前版本是否大于1.1/17.10.30
-            if ( version_compare(str_replace('/', '.', Typecho_Common::VERSION), '1.1.17.10.30') ) {
-                // 调用异步回调模式
+            if (Typecho_Common::VERSION == '1.2.0'){
+                self::sendMail($comment->coid ? $comment->coid : $comment['coid'], TRUE);
 
+            }else{
+                if ( version_compare(str_replace('/', '.', Typecho_Common::VERSION), '1.1.17.10.30') ) {
+                // 调用异步回调模式
                 Helper::requestService('asyncApproved', $comment);
             } else {
                 self::sendMail($comment->coid ? $comment->coid : $comment['coid'], TRUE);
             }
+            }
+
         }
     }
     
@@ -515,7 +525,7 @@ class LoveKKCommentModify_Plugin implements Typecho_Plugin_Interface
                 $address = $parentComment->mail;
             }
         }
-        
+
         // 获取系统配置
         $options = Helper::options();
         // 获取插件配置
@@ -542,6 +552,7 @@ class LoveKKCommentModify_Plugin implements Typecho_Plugin_Interface
             "waiting"  => '待审',
             "spam"     => '垃圾'
         );
+
         // 如果是通过审核
         if ( $isApproved ) {
             // 邮件标题
@@ -1004,7 +1015,8 @@ class LoveKKCommentModify_Plugin implements Typecho_Plugin_Interface
         // 初始化数据库
         $db = Typecho_Db::get();
         // 初始化类
-        $widget = new $className(Typecho_Request::getInstance(), Typecho_Widget_Helper_Empty::getInstance());
+        //$widget = new $className(Typecho_Request::getInstance(), Typecho_Widget_Helper_Empty::getInstance());
+        $widget = Typecho_Widget::widget($className);
         // 查询数据
         $db->fetchRow($widget->select()->where($key . ' = ?', $val)->limit(1), array($widget, 'push'));
         
