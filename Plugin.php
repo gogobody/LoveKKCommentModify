@@ -503,6 +503,7 @@ class LoveKKCommentModify_Plugin implements Typecho_Plugin_Interface
         // 上级评论对象
         $parentComment = NULL;
         // 不是帖子发表者
+
         if ( !$isApproved and $comment->authorId != $comment->ownerId ) {
             // 获取作者信息
             $author = self::getWidget('Users', 'uid', $comment->ownerId);
@@ -516,10 +517,12 @@ class LoveKKCommentModify_Plugin implements Typecho_Plugin_Interface
         }
 
         // 评论回复
+        var_dump($comment->parent );
         if ( 0 < $comment->parent ) {
             // 获取上级对象
             $parentComment = self::getWidget('Comments', 'coid', $comment->parent);
             // 是否获取到且用户ID不同或邮件地址不同
+
             if ( isset($parentComment->coid) && $comment->mail != $parentComment->mail ) {
                 // 收件地址
                 $address = $parentComment->mail;
@@ -1015,8 +1018,9 @@ class LoveKKCommentModify_Plugin implements Typecho_Plugin_Interface
         // 初始化数据库
         $db = Typecho_Db::get();
         // 初始化类
-        //$widget = new $className(Typecho_Request::getInstance(), Typecho_Widget_Helper_Empty::getInstance());
-        $widget = Typecho_Widget::widget($className);
+//        $widget = new $className(\Typecho\Widget\Request::getInstance(), Typecho_Widget_Helper_Empty::getInstance());
+
+        $widget = Typecho_Widget::widget($className.'@only_id_'.$val);
         // 查询数据
         $db->fetchRow($widget->select()->where($key . ' = ?', $val)->limit(1), array($widget, 'push'));
         
